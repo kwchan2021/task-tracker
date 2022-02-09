@@ -4,21 +4,6 @@ import Header from './components/Header'
 import Tasks from './components/Tasks'
 import AddTask from './components/AddTask';
 
-/*
-function App() {
-  const name = 'Brad'
-  const x = true
-
-  return (
-    <div className="App">
-      <Header />
-      <h1>Hello From React, {name}</h1>
-      <h2>Hello, {x ? 'Brad' : 'No one else'}</h2>
-    </div>
-  );
-}
-*/
-
 const App = () => {
 
   const [showAddTask, setShowAddTask] = useState(false)
@@ -33,21 +18,33 @@ const App = () => {
     getTasks()
   }, [])
 
+// Refresh page to show task
+const refreshTasks = async () => {
+  const data = await fetchTasks()
+  setTasks(data)
+}
+
+// Dequeue Task - Delete the last item
+const dequeueTask = async () => {
+  const data = await fetchTasks()
+  console.log(data[data.length-1].id)
+  const id = data[data.length-1].id
+
+  await fetch(`http://localhost:5000/tasks/${id}`, 
+    {method: 'DELETE'}
+  )
+  setTasks(tasks.filter((task) => task.id !== id))
+}
+
 // Fetch data
 const fetchTasks = async () => {
   const res = await fetch('http://localhost:5000/tasks')
   const data = await res.json()
-
   return data
 }
 
 // Add Task
 const addTask = async (task) => {
-  //const id = Math.floor(Math.random() * 10000) + 1
-  //const newTask = { id, ...task}
-  //setTasks([...tasks, newTask])
-  // setTasks(tasks.push(newTask)) // Does not work
-  //console.log(id)
   const res = await fetch('http://localhost:5000/tasks',
     {
       method: 'POST',
@@ -56,11 +53,8 @@ const addTask = async (task) => {
       },
       body: JSON.stringify(task)
     })
-
     const data = await res.json()
-
     setTasks([...tasks, data])
-
 }
 
 // Delete Task
@@ -68,8 +62,6 @@ const deleteTask = async (id) => {
   await fetch(`http://localhost:5000/tasks/${id}`, 
     {method: 'DELETE'}
   )
-
-
   setTasks(tasks.filter((task) => task.id !== id))
 }
 
@@ -85,20 +77,21 @@ const toggleReminder = (id) => {
         title="Task Trackers" 
         onAdd={() => setShowAddTask(!showAddTask)}
         showAdd={showAddTask}
+        onRefresh={ refreshTasks }
+        onDequeue={ dequeueTask }
       />
       {
         showAddTask && 
-        <AddTask onAdd={addTask}/>
+        <AddTask onAdd={ addTask }/>
       }
       {tasks.length > 0?
         <Tasks 
         tasks={tasks}
         onDelete={ deleteTask } 
-        onToggle={toggleReminder}
+        onToggle={ toggleReminder }
         /> : 'No Task'}
     </div>
   )
 }
-
 
 export default App;
